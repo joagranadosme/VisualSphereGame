@@ -6,6 +6,8 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorManager;
 import android.hardware.SensorEventListener;
 
+import java.text.DecimalFormat;
+
 import processing.core.PApplet;
 
 import frames.primitives.*;
@@ -23,9 +25,13 @@ public class Sketch extends PApplet {
 
     //Movement variables.
     private float ax, ay, az;
-    private int translation, rotation;
+    private int rotation;
 
-    private Frame sun; //Frames for planets.
+    //Tap rotation variable.
+    private boolean flag = false;
+
+    //Frames for planets.
+    private Frame universe, sun, earth, moon;
 
     /*
     TODO QUESTIONS:
@@ -52,9 +58,18 @@ public class Sketch extends PApplet {
         manager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_GAME);
         textFont(createFont("SansSerif", 10 * displayDensity));
 
+        //Initialize universe
+        universe = new Frame();
+        universe.translate(width/2, height/2);
+
         //Initialize sun
-        sun = new Frame();
-        sun.translate(width/2, height/2);
+        sun = new Frame(universe, new Vector(0,0), new Quaternion());
+
+        //Initialize earth
+        earth = new Frame(sun, new Vector(400, 0), new Quaternion());
+
+        //Initialize moon
+        moon = new Frame(earth, new Vector(100, 0), new Quaternion());
 
     }
 
@@ -71,18 +86,50 @@ public class Sketch extends PApplet {
 
         //Draw all frames
         push();
+        Scene.applyTransformation(this.g, universe);
+        push();
         Scene.applyTransformation(this.g, sun);
+        stroke(0);
+        fill(255,255,0);
+        planet(100);
+        push();
+        Scene.applyTransformation(this.g, earth);
+        stroke(0);
+        fill(0,0,255);
+        planet(50);
+        push();
+        Scene.applyTransformation(this.g, moon);
         noStroke();
-        fill(255, 255, 0);
-        planet(300);
+        fill(200, 200, 200);
+        planet(10);
+        pop();
+        pop();
+        pop();
         pop();
 
     }
 
-    void updateFrames() {
+    public void mouseDragged() {
 
-        rotation += ay;
-        sun.setRotation(new Quaternion(new Vector(0.0F, 1.0F, 0.0F), radians(rotation)));
+        universe.setTranslation(mouseX, mouseY);
+
+    }
+
+    public void mousePressed() {
+
+        flag = !flag;
+
+    }
+
+    public void updateFrames() {
+
+        if(flag)
+            rotation+=5;
+
+        universe.setRotation(new Quaternion(new Vector(1.0F, 0.0F, 0.0F), radians(-20F * ax)));
+        sun.setRotation(new Quaternion(new Vector(0.0F, 1.0F, 0.0F), radians(0.5F * rotation)));
+        earth.setRotation(new Quaternion(new Vector(0.0F, 1.0F, 0.0F), radians(2*rotation)));
+        moon.setRotation(new Quaternion(new Vector(0.0F, 1.0F, 0.0F), radians(rotation)));
 
     }
 
@@ -116,15 +163,15 @@ public class Sketch extends PApplet {
         }
     }
 
-
     //Class for receive the events from Accelerometer
     class AccelerometerListener implements SensorEventListener {
 
         @Override
         public void onSensorChanged(SensorEvent sensorEvent) {
-            ax =  sensorEvent.values[0];
-            ay =  sensorEvent.values[1];
-            az =  sensorEvent.values[2];
+            //ax =  ((float)((int)(sensorEvent.values[0]*10)))/10;
+            ax = sensorEvent.values[0];
+            ay = sensorEvent.values[1];
+            az = sensorEvent.values[2];
         }
 
         @Override
@@ -133,8 +180,5 @@ public class Sketch extends PApplet {
         }
 
     }
-
-
-
 
 }
